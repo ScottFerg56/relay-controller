@@ -15,10 +15,23 @@ void RelayController::setParams(int duty_cycle, float duration_s) {
     _duty_cycle  = constrain(duty_cycle, 0, 100);
     _duration_ms = (uint32_t)(duration_s * 1000.0f);
     _on_ms       = (uint32_t)(_duration_ms * _duty_cycle / 100);
-    _cycle_start = millis(); // restart cycle with new params
+    _cycle_start = millis();
+}
+
+void RelayController::enable() {
+    _enabled = true;
+    _cycle_start = millis();
+}
+
+void RelayController::disable() {
+    _enabled = false;
+    _relay_on = false;
+    digitalWrite(RELAY_PIN, LOW);
 }
 
 void RelayController::update() {
+    if (!_enabled) return;
+
     uint32_t elapsed = millis() - _cycle_start;
 
     if (elapsed >= _duration_ms) {

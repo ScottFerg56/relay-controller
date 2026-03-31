@@ -2,6 +2,8 @@
 #include <WiFi.h>
 #include "config.h"
 #include "relay_ctrl.h"
+#include "encoder_ctrl.h"
+#include "display_ctrl.h"
 
 void wifiServerBegin();
 void wifiServerHandle();
@@ -11,6 +13,8 @@ void setup() {
     delay(500);
 
     relay.begin();
+    encoderBegin();
+    displayBegin();
 
     Serial.print("Connecting to WiFi");
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -28,5 +32,7 @@ void setup() {
 
 void loop() {
     wifiServerHandle();
+    encoderUpdate();
     relay.update();
+    displayUpdate();
 }

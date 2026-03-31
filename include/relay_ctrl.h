@@ -6,7 +6,10 @@ public:
     void begin();
     void setParams(int duty_cycle, float duration_s);
     void update();
+    void enable();
+    void disable();
 
+    bool  isEnabled()    const { return _enabled; }
     bool  isOn()         const { return _relay_on; }
     int   getDutyCycle() const { return _duty_cycle; }
     float getDuration()  const { return _duration_ms / 1000.0f; }
@@ -17,6 +20,7 @@ private:
     uint32_t _on_ms       = 5000;
     uint32_t _cycle_start = 0;
     bool     _relay_on    = false;
+    bool     _enabled     = true;
 };
 
 extern RelayController relay;
