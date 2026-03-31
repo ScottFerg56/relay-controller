@@ -17,12 +17,12 @@ static bool     rightBtnLast  = HIGH;
 static uint32_t leftBtnTime   = 0;
 static uint32_t rightBtnTime  = 0;
 
-static bool lastEnabled = true;
-static bool lastOn      = false;
+static RelayState lastState = RelayState::PWM;
+static bool       lastOn    = false;
 
-static void updateNeopixels(bool enabled, bool on) {
+static void updateNeopixels(RelayState state, bool on) {
     uint32_t color;
-    if (!enabled)
+    if (state == RelayState::RELAY_OFF)
         color = pixLeft.Color(80, 60, 0);   // yellow
     else if (on)
         color = pixLeft.Color(0, 80, 0);    // green
@@ -52,7 +52,7 @@ void encoderBegin() {
     pixRight.begin(ENCODER_RIGHT_ADDR);
     pixRight.setBrightness(80);
 
-    updateNeopixels(relay.isEnabled(), relay.isOn());
+    updateNeopixels(relay.getState(), relay.isOn());
 }
 
 void encoderUpdate() {
@@ -77,31 +77,34 @@ void encoderUpdate() {
         relay.setParams(relay.getDutyCycle(), newDur);
     }
 
-    // --- Left button: toggle enable/disable ---
+    // --- Left button: PWM/ALWAYS_ON -> DISABLED, DISABLED -> PWM ---
     bool leftBtn = ssLeft.digitalRead(ENCODER_SWITCH_PIN);
     if (leftBtn == LOW && leftBtnLast == HIGH && (now - leftBtnTime) > BUTTON_DEBOUNCE_MS) {
         leftBtnTime = now;
-        if (relay.isEnabled())
-            relay.disable();
-        else
+        if (relay.getState() == RelayState::RELAY_OFF)
             relay.enable();
+        else
+            relay.disable();
     }
     leftBtnLast = leftBtn;
 
-    // --- Right button: mode (stub) ---
+    // --- Right button: PWM/DISABLED -> ALWAYS ON, ALWAYS ON -> PWM ---
     bool rightBtn = ssRight.digitalRead(ENCODER_SWITCH_PIN);
     if (rightBtn == LOW && rightBtnLast == HIGH && (now - rightBtnTime) > BUTTON_DEBOUNCE_MS) {
         rightBtnTime = now;
-        // future: mode switching
+        if (relay.getState() == RelayState::RELAY_ON)
+            relay.enable();
+        else
+            relay.setOn();
     }
     rightBtnLast = rightBtn;
 
     // --- Update NeoPixels if state changed ---
-    bool enabled = relay.isEnabled();
-    bool on      = relay.isOn();
-    if (enabled != lastEnabled || on != lastOn) {
-        updateNeopixels(enabled, on);
-        lastEnabled = enabled;
-        lastOn      = on;
+    RelayState state = relay.getState();
+    bool on          = relay.isOn();
+    if (state != lastState || on != lastOn) {
+        updateNeopixels(state, on);
+        lastState = state;
+        lastOn    = on;
     }
 }

@@ -7,6 +7,7 @@ void RelayController::begin() {
     pinMode(RELAY_PIN, OUTPUT);
     digitalWrite(RELAY_PIN, LOW);
     _relay_on = false;
+    _state    = RelayState::PWM;
     setParams(DEFAULT_DUTY_CYCLE, DEFAULT_DURATION);
     _cycle_start = millis();
 }
@@ -19,18 +20,25 @@ void RelayController::setParams(int duty_cycle, float duration_s) {
 }
 
 void RelayController::enable() {
-    _enabled = true;
+    _state       = RelayState::PWM;
     _cycle_start = millis();
 }
 
 void RelayController::disable() {
-    _enabled = false;
+    _state    = RelayState::RELAY_OFF;
     _relay_on = false;
     digitalWrite(RELAY_PIN, LOW);
 }
 
+void RelayController::setOn() {
+    _state    = RelayState::RELAY_ON;
+    _relay_on = true;
+    digitalWrite(RELAY_PIN, HIGH);
+}
+
 void RelayController::update() {
-    if (!_enabled) return;
+    if (_state == RelayState::RELAY_OFF) return;
+    if (_state == RelayState::RELAY_ON)  return;
 
     uint32_t elapsed = millis() - _cycle_start;
 

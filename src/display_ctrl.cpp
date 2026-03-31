@@ -15,10 +15,10 @@
 
 static Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-static bool     lastEnabled  = true;
-static bool     lastOn       = false;
-static int      lastDuty     = -1;
-static float    lastDuration = -1.0f;
+static RelayState lastState    = RelayState::PWM;
+static bool       lastOn       = false;
+static int        lastDuty     = -1;
+static float      lastDuration = -1.0f;
 
 void displayBegin() {
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -35,21 +35,26 @@ static void drawBar(bool relayOn) {
     }
 }
 
-static void drawParams(int duty, float duration, bool enabled) {
+static void drawParams(int duty, float duration, RelayState state) {
     // Clear blue zone
     display.fillRect(0, 16, SCREEN_WIDTH, SCREEN_HEIGHT - 16, BLACK);
 
     display.setTextColor(WHITE);
+    display.setTextSize(2);
 
-    if (!enabled) {
-        display.setTextSize(2);
+    if (state == RelayState::RELAY_OFF) {
         display.setCursor(22, 28);
         display.print("DISABLED");
         return;
     }
 
+    if (state == RelayState::RELAY_ON) {
+        display.setCursor(16, 28);
+        display.print("ALWAYS ON");
+        return;
+    }
+
     // Duty cycle — left half
-    display.setTextSize(2);
     char buf[8];
     snprintf(buf, sizeof(buf), "%d%%", duty);
     int16_t x, y;
@@ -66,13 +71,13 @@ static void drawParams(int duty, float duration, bool enabled) {
 }
 
 void displayUpdate() {
-    bool on      = relay.isOn();
-    bool enabled = relay.isEnabled();
-    int  duty    = relay.getDutyCycle();
-    float dur    = relay.getDuration();
+    RelayState state = relay.getState();
+    bool on          = relay.isOn();
+    int  duty        = relay.getDutyCycle();
+    float dur        = relay.getDuration();
 
     bool barChanged    = (on != lastOn);
-    bool paramsChanged = (duty != lastDuty || dur != lastDuration || enabled != lastEnabled);
+    bool paramsChanged = (state != lastState || duty != lastDuty || dur != lastDuration);
 
     if (!barChanged && !paramsChanged) return;
 
@@ -82,10 +87,10 @@ void displayUpdate() {
     }
 
     if (paramsChanged) {
-        drawParams(duty, dur, enabled);
+        drawParams(duty, dur, state);
+        lastState    = state;
         lastDuty     = duty;
         lastDuration = dur;
-        lastEnabled  = enabled;
     }
 
     display.display();
