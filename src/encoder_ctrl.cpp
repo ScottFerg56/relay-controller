@@ -32,7 +32,7 @@ void encoderUpdate() {
     // --- Left encoder: duty cycle ---
     int32_t leftPos = ssLeft.getEncoderPosition();
     if (leftPos != lastLeftPos) {
-        int delta = (int)(leftPos - lastLeftPos);
+        int delta = (int)(lastLeftPos - leftPos);
         lastLeftPos = leftPos;
         int newDuty = constrain(relay.getDutyCycle() + delta * DUTY_STEP, 0, 100);
         relay.setParams(newDuty, relay.getDuration());
@@ -41,10 +41,10 @@ void encoderUpdate() {
     // --- Right encoder: duration ---
     int32_t rightPos = ssRight.getEncoderPosition();
     if (rightPos != lastRightPos) {
-        int delta = (int)(rightPos - lastRightPos);
+        int delta = (int)(lastRightPos - rightPos);
         lastRightPos = rightPos;
         float newDur = relay.getDuration() + delta * DURATION_STEP;
-        if (newDur < 0.5f) newDur = 0.5f;
+        if (newDur < 1.0f) newDur = 1.0f;
         relay.setParams(relay.getDutyCycle(), newDur);
     }
 

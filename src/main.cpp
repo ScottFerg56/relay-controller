@@ -16,6 +16,7 @@ void setup() {
     encoderBegin();
     displayBegin();
 
+    WiFi.config(STATIC_IP, GATEWAY_IP, SUBNET_MASK);
     Serial.print("Connecting to WiFi");
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     while (WiFi.status() != WL_CONNECTED) {

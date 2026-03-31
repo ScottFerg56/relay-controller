@@ -48,21 +48,20 @@ static void drawParams(int duty, float duration, bool enabled) {
         return;
     }
 
-    // Duty cycle — left half, large font
-    display.setTextSize(3);
+    // Duty cycle — left half
+    display.setTextSize(2);
     char buf[8];
     snprintf(buf, sizeof(buf), "%d%%", duty);
-    // Right-align duty in left half (0..63)
     int16_t x, y;
     uint16_t w, h;
     display.getTextBounds(buf, 0, 0, &x, &y, &w, &h);
-    display.setCursor((64 - w) / 2, 22);
+    display.setCursor((64 - w) / 2, 32);
     display.print(buf);
 
-    // Duration — right half, large font
+    // Duration — right half
     snprintf(buf, sizeof(buf), "%.1f", duration);
     display.getTextBounds(buf, 0, 0, &x, &y, &w, &h);
-    display.setCursor(64 + (64 - w) / 2, 22);
+    display.setCursor(64 + (64 - w) / 2, 32);
     display.print(buf);
 }
 

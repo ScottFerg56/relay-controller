@@ -22,18 +22,42 @@ static const char PAGE[] PROGMEM = R"html(
   <h2>Relay Controller</h2>
   <form method="POST" action="/set">
     <label>Duty Cycle (%)
-      <input type="number" name="duty" min="0" max="100" value="%DUTY%">
+      <input type="number" name="duty" min="0" max="100" step="5" value="%DUTY%">
     </label>
     <label>Duration (s)
-      <input type="number" name="duration" min="1" max="3600" step="0.1" value="%DUR%">
+      <input type="number" name="duration" min="0" max="3600" step="0.5" value="%DUR%">
     </label>
     <button type="submit">Apply</button>
   </form>
   <div id="status">Relay: <strong id="rstate">%STATE%</strong></div>
   <script>
+    var dutyEl = document.querySelector('input[name=duty]');
+    var durEl  = document.querySelector('input[name=duration]');
+    var lastInput = 0;
+
+    function sendParams() {
+      lastInput = Date.now();
+      fetch('/set', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'duty=' + dutyEl.value + '&duration=' + durEl.value
+      });
+    }
+
+    dutyEl.addEventListener('input', sendParams);
+    durEl.addEventListener('input', sendParams);
+    document.querySelector('form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      sendParams();
+    });
+
     setInterval(function() {
       fetch('/status').then(r => r.json()).then(d => {
         document.getElementById('rstate').textContent = d.relay;
+        if (Date.now() - lastInput > 1000) {
+          dutyEl.value = d.duty_cycle;
+          durEl.value  = d.duration;
+        }
       });
     }, 500);
   </script>
@@ -57,17 +81,17 @@ static void handleSet() {
     if (server.hasArg("duty") && server.hasArg("duration")) {
         int   duty = server.arg("duty").toInt();
         float dur  = server.arg("duration").toFloat();
+        if (dur < 1.0f) dur = 1.0f;
         relay.setParams(duty, dur);
     }
-    server.sendHeader("Location", "/");
-    server.send(303);
+    server.send(200);
 }
 
 static void handleStatus() {
     String json = "{\"duty_cycle\":";
     json += relay.getDutyCycle();
     json += ",\"duration\":";
-    json += relay.getDuration();
+    json += String(relay.getDuration(), 1);
     json += ",\"relay\":\"";
     json += relay.isOn() ? "ON" : "OFF";
     json += "\"}";
