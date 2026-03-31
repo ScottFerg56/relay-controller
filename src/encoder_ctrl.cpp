@@ -1,10 +1,13 @@
 #include <Adafruit_seesaw.h>
+#include <seesaw_neopixel.h>
 #include "encoder_ctrl.h"
 #include "relay_ctrl.h"
 #include "config.h"
 
-static Adafruit_seesaw ssLeft;
-static Adafruit_seesaw ssRight;
+static Adafruit_seesaw   ssLeft;
+static Adafruit_seesaw   ssRight;
+static seesaw_NeoPixel   pixLeft (1, ENCODER_NEOPIX_PIN, NEO_GRB + NEO_KHZ800);
+static seesaw_NeoPixel   pixRight(1, ENCODER_NEOPIX_PIN, NEO_GRB + NEO_KHZ800);
 
 static int32_t lastLeftPos  = 0;
 static int32_t lastRightPos = 0;
@@ -14,16 +17,42 @@ static bool     rightBtnLast  = HIGH;
 static uint32_t leftBtnTime   = 0;
 static uint32_t rightBtnTime  = 0;
 
+static bool lastEnabled = true;
+static bool lastOn      = false;
+
+static void updateNeopixels(bool enabled, bool on) {
+    uint32_t color;
+    if (!enabled)
+        color = pixLeft.Color(80, 60, 0);   // yellow
+    else if (on)
+        color = pixLeft.Color(0, 80, 0);    // green
+    else
+        color = pixLeft.Color(0, 0, 80);    // blue
+
+    pixLeft.setPixelColor(0, color);
+    pixLeft.show();
+    pixRight.setPixelColor(0, color);
+    pixRight.show();
+}
+
 void encoderBegin() {
     ssLeft.begin(ENCODER_LEFT_ADDR);
     ssLeft.pinMode(ENCODER_SWITCH_PIN, INPUT_PULLUP);
     ssLeft.setEncoderPosition(0);
     lastLeftPos = 0;
 
+    pixLeft.begin(ENCODER_LEFT_ADDR);
+    pixLeft.setBrightness(80);
+
     ssRight.begin(ENCODER_RIGHT_ADDR);
     ssRight.pinMode(ENCODER_SWITCH_PIN, INPUT_PULLUP);
     ssRight.setEncoderPosition(0);
     lastRightPos = 0;
+
+    pixRight.begin(ENCODER_RIGHT_ADDR);
+    pixRight.setBrightness(80);
+
+    updateNeopixels(relay.isEnabled(), relay.isOn());
 }
 
 void encoderUpdate() {
@@ -66,4 +95,13 @@ void encoderUpdate() {
         // future: mode switching
     }
     rightBtnLast = rightBtn;
+
+    // --- Update NeoPixels if state changed ---
+    bool enabled = relay.isEnabled();
+    bool on      = relay.isOn();
+    if (enabled != lastEnabled || on != lastOn) {
+        updateNeopixels(enabled, on);
+        lastEnabled = enabled;
+        lastOn      = on;
+    }
 }

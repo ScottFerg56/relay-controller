@@ -18,6 +18,7 @@
 #define ENCODER_LEFT_ADDR   0x36
 #define ENCODER_RIGHT_ADDR  0x37
 #define ENCODER_SWITCH_PIN  24     // seesaw pin for encoder push button
+#define ENCODER_NEOPIX_PIN  6      // seesaw pin for encoder NeoPixel
 #define DUTY_STEP           5      // % per detent
 #define DURATION_STEP       0.5f   // seconds per detent
 #define BUTTON_DEBOUNCE_MS  50
